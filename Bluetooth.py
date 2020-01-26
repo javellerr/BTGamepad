@@ -1,5 +1,8 @@
 from bluetooth import *
 import dbus # Used to set up the SDP record
+import sys
+import os
+
 class Bluetooth:
     """docstring for Gamepad"""
     HOST = 0
@@ -17,21 +20,26 @@ class Bluetooth:
         self.sockinter.bind(("",Bluetooth.P_INTR))
 
         self.bus = dbus.SystemBus()
-        try:
-            self.manager = dbus.Interface(self.bus.get_object("org.bluez", "/"), "org.bluez.Manager")
-            adapter_path = self.manager.DefaultAdapter()
-            self.service = dbus.Interface(self.bus.get_object("org.bluez", adapter_path),"org.bluez.Service")
-        except Exception, e:
-            sys.exit("Please turn on bluetooth")
+        self.manager = dbus.Interface(self.bus.get_object("org.bluez", "/org/bluez"), "org.bluez.ProfileManager1")
+
         try:
             fh = open(sdp,"r")
         except Exception, e:
-            sys.exit("Cannot open sdp_record file")
+            sys.exit("Cannot open sdp_record file, " + str(e))
+
         self.service_record = fh.read()
+
+        opts = {
+            "ServiceRecord":self.service_record,
+            "Role":"server",
+            "RequireAuthentication":False,
+            "RequireAuthorization":False
+        }
+
+        self.manager.RegisterProfile("/bluez/profile", self.UUID, opts)
         fh.close()
 
     def listen(self):
-        self.service.handle = self.service.AddRecord(self.service_record)
         os.system("sudo hciconfig hci0 class "+self.classname)
         os.system("sudo hciconfig hci0 name "+self.devname)
         self.soccontrol.listen(1)
