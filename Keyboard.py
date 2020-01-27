@@ -28,7 +28,7 @@ class Keyboard:
         while True:
             try:
                 self.dev = InputDevice("/dev/input/event"+str(i))
-                if "keyboard" in str(self.dev):
+                if "Keyboard" in str(self.dev):
                     break
             except Exception, e:
                 sys.exit("Keyboard not found")
